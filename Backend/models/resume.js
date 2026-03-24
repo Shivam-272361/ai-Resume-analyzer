@@ -5,7 +5,7 @@ const resumeSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    filePath: {
+    fileURL: {
         type: String,
         required: true,
     },
@@ -14,18 +14,22 @@ const resumeSchema = new mongoose.Schema({
     },
     extractedText: {
         type: String,
-        required: true,
     },
     aiResult: {
-    topRoles: [String],
-    missingSkills: [String],
-    briefAdvice: String
+        topRoles: [String],
+        missingSkills: [String],
+        briefAdvice: String
+    },
+    expiresAt: {
+        type: Date,
+        default: () => new Date(Date.now() + 24 * 60 * 60 * 1000),
+        index: { expires: 0 }
     }
 },
     {
-       
+
         timestamps: true
     }
 )
-const Resume = mongoose.model("Resume",resumeSchema);
-module.exports = Resume ;
+const Resume = mongoose.model("Resume", resumeSchema);
+module.exports = Resume;

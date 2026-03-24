@@ -26,6 +26,7 @@ dbConnect();
 const routes = require("./routers/resumeRoutes");
 
 app.use("/api/v1",routes);
+app.use("/uploads", express.static("uploads"));
 
 app.listen(PORT,()=>{
     console.log(`App listen in at ${PORT}` );

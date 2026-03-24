@@ -9,8 +9,8 @@ const ResumeAnalyzer = () => {
   const [data, setData] = useState(null);
   const inputRef = useRef();
 
-  const API_URL = import.meta.env.VITE_API_URL;
-
+  const API_URL = import.meta.env.VITE_API_URL;  // VITE_API_URL=http://localhost:5000/api/v1/upload  not the real
+  const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -122,12 +122,32 @@ const ResumeAnalyzer = () => {
         )}
         {/* Results */}
         {data && (
-          <div className='space-y-5'>
+          < div className='space-y-5'>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-zinc-500 uppercase">Resume Preview</p>
+
+                <a
+                  href={`${BASE_URL}${data.fileURL}`}
+                  target="_blank"
+                  className="text-xs text-lime-400 hover:underline"
+                >
+                  Open Full
+                </a>
+              </div>
+
+              <div className="overflow-hidden rounded-lg border border-zinc-800">
+                <iframe
+                  src={`${BASE_URL}${data.fileURL}#toolbar=0`}
+                  className="w-full h-[500px]"
+                />
+              </div>
+            </div>
             {/* Top Roles */}
             <div className='bg-zinc-900 border border-zinc-800 rounded-xl p-5'>
               <p className='text-xs text-zinc-500 uppercase tracking-widest mb-4'>Best-fit Roles</p>
               <div className='space-y-2'>
-                {(data.ai.topRoles ?? []).map((role, i) => (
+                {(data?.aiResult?.topRoles ?? []).map((role, i) => (
                   <div key={i} className='flex items-center border-b gap-3 py-2 border-zinc-800 last:border-0'>
                     <span className='text-xs font-bold text-lime-400 w-5 shrink-0'>#{i + 1}</span>
                     <span className='text-sm text-zinc-100 '>{role}</span>
@@ -139,7 +159,7 @@ const ResumeAnalyzer = () => {
             <div className='bg-zinc-800 border-zinc-800 rounded-xl p-5'>
               <p className='text-xs text-zinc-500 uppercase tracking-widest mb-4'>Skill Gaps</p>
               <div className='flex flex-wrap gap-2'>
-                {(data.ai.missingSkills ?? []).map((skill, i) => (
+                {(data?.aiResult?.missingSkills ?? []).map((skill, i) => (
                   <span
                     key={i}
                     className="text-xs px-3 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20"
@@ -150,10 +170,10 @@ const ResumeAnalyzer = () => {
               </div>
             </div>
             {/* Brief advice */}
-            {data.ai.briefAdvice && (
+            {data?.aiResult?.briefAdvice && (
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
                 <p className="text-xs text-zinc-500 uppercase tracking-widest mb-3">Advice</p>
-                <p className="text-sm text-zinc-300 leading-relaxed">{data.ai.briefAdvice}</p>
+                <p className="text-sm text-zinc-300 leading-relaxed">{data.aiResult.briefAdvice}</p>
               </div>
             )}
 
@@ -167,7 +187,7 @@ const ResumeAnalyzer = () => {
           </div>
         )}
       </div>
-    </div>
+    </div >
   )
 }
 
