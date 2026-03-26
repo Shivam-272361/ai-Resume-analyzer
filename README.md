@@ -21,7 +21,7 @@ backend/
 ## ⚙️ Setup Instructions
 
 ### 1. Clone repo
-git clone https://github.com/your-username/ai-resume-analyzer.git
+git clone https://github.com/Shivam-272361/ai-Resume-analyzer.git
 
 ### 2. Setup Backend
 cd backend
