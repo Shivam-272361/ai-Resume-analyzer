@@ -1,37 +1,48 @@
 const cron = require("node-cron");
 const fs = require("fs/promises");
 const path = require("path");
-const Resume = require("../models/resume");
+
+// ⏱️ Change this for testing (1 min), then set back to 24 hrs
+const EXPIRY_TIME = 24 * 60 * 60 * 1000; // 24 hours
+// const EXPIRY_TIME = 60 * 1000; // 1 minute (for testing)
+
+const uploadDir = path.join(__dirname, "../uploads");
+
+console.log("Cleanup cron initialized");
 
 cron.schedule("0 * * * *", async () => {
-  console.log("Running cleanup job...");
+  console.log("Running file cleanup...");
 
-  const expiredResumes = await Resume.find({
-    expiresAt: { $lt: new Date() }
-  });
+  try {
+    const files = await fs.readdir(uploadDir);
 
-  for (const resume of expiredResumes) {
-    try {
-      if (!resume.fileURL) continue;
-
-      const fileName = resume.fileURL.split("/").pop();
-      const filePath = path.join(__dirname, "../uploads", fileName);
-
-      // delete file (no exists check needed)
-      try {
-        await fs.unlink(filePath);
-      } catch (err) {
-        console.log("File already deleted or missing");
-      }
-
-      // delete DB record
-      await Resume.findByIdAndDelete(resume._id);
-
-      console.log(`Deleted: ${fileName}`);
-    } catch (err) {
-      console.log("Error deleting file:", err);
+    if (!files.length) {
+      console.log("No files found");
+      return;
     }
-  }
 
-  console.log(`Cleanup done. Removed ${expiredResumes.length} items`);
+    const now = Date.now();
+    let deletedCount = 0;
+
+    for (const file of files) {
+      try {
+        const filePath = path.join(uploadDir, file);
+
+        const stats = await fs.stat(filePath);
+        const fileAge = now - stats.mtimeMs;
+
+        if (fileAge > EXPIRY_TIME) {
+          await fs.unlink(filePath);
+          deletedCount++;
+          console.log(`Deleted file: ${file}`);
+        }
+      } catch (err) {
+        console.log(`Error processing file ${file}:`, err.message);
+      }
+    }
+
+    console.log(`Cleanup done. Deleted ${deletedCount} files`);
+  } catch (err) {
+    console.error("Cleanup job failed:", err.message);
+  }
 });

@@ -1,6 +1,7 @@
 const Resume = require("../models/resume");
 const { extractText } = require("../utility/extractText");
-const { analyzeResume, extractSkillsAI , calculateToneScore } = require("../services/geminiAI");
+const { extractSkills } = require("../utility/skillExtractor");
+const { analyzeResume } = require("../services/geminiAI");
 const fs = require("fs/promises");
 
 
@@ -85,8 +86,7 @@ exports.uploadResume = async (req, res) => {
         const text = await extractText(file.path, file.mimetype);
 
         // 🔹 Extract skills using AI
-        const skillResponse = await extractSkillsAI(text);
-        const extractedSkills = skillResponse.skills || [];
+        const extractedSkills = extractSkills(text);
 
         const normalizedExtracted = extractedSkills.map(normalizeSkill);
 
@@ -96,26 +96,28 @@ exports.uploadResume = async (req, res) => {
 
         let structureScore = 0;
 
-        if (text.toLowerCase().includes("education")) structureScore += 25;
-        if (text.toLowerCase().includes("experience")) structureScore += 25;
-        if (text.toLowerCase().includes("skills")) structureScore += 25;
+        const lowerText = text.toLowerCase();
 
-        const hasBullets = /•|-|\*/.test(text);
-        if (hasBullets) structureScore += 10;
+        const sections = ["education", "experience", "skills", "projects"];
 
+        sections.forEach(section => {
+            if (lowerText.includes(section)) {
+                structureScore += 20;
+            }
+        });
+
+        if (/•|-|\*/.test(text)) structureScore += 20;
         const contentScore = calculateContentScore(text);
 
 
 
         // 🔹 Optional: your existing AI analysis
         const aiResult = await analyzeResume(text);
-        
-        const toneScore = 100;;
-        const overallScore =
-            0.3 * skillAnalysis.score +
+
+        const atsScore =
+            0.5 * skillAnalysis.score +
             0.25 * contentScore +
-            0.25 * structureScore +
-            0.2 * toneScore;
+            0.25 * structureScore
 
         // 🔹 Save to DB
         const savedResume = await Resume.create({
@@ -123,10 +125,12 @@ exports.uploadResume = async (req, res) => {
             fileURL: fileUrl,
             fileType: file.mimetype,
             fileSize: file.size,
-            extractedText: text,
             aiResult: aiResult,
             analysis: {
+                structureScore: structureScore,
+                contentScore: contentScore,
                 skillScore: skillAnalysis.score,
+                ATSscore: atsScore,
                 matchedSkills: skillAnalysis.matchedSkills,
                 missingSkills: skillAnalysis.missingSkills,
                 extractedSkills: extractedSkills
@@ -138,11 +142,12 @@ exports.uploadResume = async (req, res) => {
             message: "Resume analyzed successfully",
             id: savedResume._id,
             fileURL: fileUrl,
-            skillScore: skillAnalysis.score,
-            structureScore: structureScore,
-            contentScore: contentScore,
-            toneScore:toneScore,
-            overallScore : overallScore,
+            ATSscore: atsScore,
+            ATSbreakDown: {
+                skillScore: skillAnalysis.score,
+                structureScore: structureScore,
+                contentScore: contentScore,
+            },
             matchedSkills: skillAnalysis.matchedSkills,
             missingSkills: skillAnalysis.missingSkills,
             extractedSkills: extractedSkills,
