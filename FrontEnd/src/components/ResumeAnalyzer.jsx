@@ -4,6 +4,7 @@ import axios from 'axios';
 const ResumeAnalyzer = () => {
   const [file, setFile] = useState(null);
   const [dragging, setDragging] = useState(false);
+  const [role, setRole] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
@@ -14,6 +15,11 @@ const ResumeAnalyzer = () => {
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
+  }
+  const selectHandler = (e) => {
+    const value = e.target.value;
+    setRole(value);
+    console.log(value);
   }
   const handleDrop = (e) => {
     e.preventDefault();
@@ -27,6 +33,7 @@ const ResumeAnalyzer = () => {
 
     const formData = new FormData();
     formData.append("resume", file);
+    formData.append("role",role);
 
     setLoading(true);
     try {
@@ -100,7 +107,19 @@ const ResumeAnalyzer = () => {
                   <p className='text-xs text-zinc-500 mt-1'>or click here to browse. PDF,DOCX</p>
                 </div>
               )}
+
             </div>
+            <div>
+              <select name="role" className='text-red-400' onChange={selectHandler}>
+                <option value="frontend">Frontend developer</option>
+                <option value="backend">Backend developer</option>
+                <option value="fullstack">Full stack developer</option>
+                <option value="ds">Data Science</option>
+                <option value="ml">Machine learning</option>
+              </select>
+
+            </div>
+
             {/* Analyze Button */}
             <button
               onClick={submitHandler}
@@ -123,26 +142,6 @@ const ResumeAnalyzer = () => {
         {/* Results */}
         {data && (
           < div className='space-y-5'>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-lg">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs text-zinc-500 uppercase">Resume Preview</p>
-
-                <a
-                  href={`${BASE_URL}${data.fileURL}`}
-                  target="_blank"
-                  className="text-xs text-lime-400 hover:underline"
-                >
-                  Open Full
-                </a>
-              </div>
-
-              <div className="overflow-hidden rounded-lg border border-zinc-800">
-                <iframe
-                  src={`${BASE_URL}${data.fileURL}#toolbar=0`}
-                  className="w-full h-[500px]"
-                />
-              </div>
-            </div>
             {/* Top Roles */}
             <div className='bg-zinc-900 border border-zinc-800 rounded-xl p-5'>
               <p className='text-xs text-zinc-500 uppercase tracking-widest mb-4'>Best-fit Roles</p>
