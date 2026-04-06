@@ -59,7 +59,15 @@ exports.uploadResume = async (req, res) => {
     };
 
     const file = req.file;
-    const role = req.body.role;
+    const roleAliases = {
+        ds: "data",
+        datascience: "data",
+        "data science": "data",
+        machinelearning: "ml",
+        "machine learning": "ml",
+    };
+    const requestedRole = String(req.body.role || "").trim().toLowerCase();
+    const role = roleAliases[requestedRole] || requestedRole;
 
     try {
         // 🔴 Validate role
@@ -112,7 +120,17 @@ exports.uploadResume = async (req, res) => {
 
 
         // 🔹 Optional: your existing AI analysis
-        const aiResult = await analyzeResume(text);
+        let aiResult;
+        try {
+            aiResult = await analyzeResume(text);
+        } catch (aiError) {
+            console.error("AI analysis failed, falling back to default response:", aiError.message);
+            aiResult = {
+                topRoles: [role],
+                missingSkills: skillAnalysis.missingSkills.slice(0, 5),
+                briefAdvice: "Improve role-specific skills, resume structure, and measurable impact to increase your ATS score."
+            };
+        }
 
         const atsScore =
             0.5 * skillAnalysis.score +
