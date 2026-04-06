@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react'
 import axios from 'axios';
+import Scorecard from './Scorecard';
 
 const ResumeAnalyzer = () => {
   const [file, setFile] = useState(null);
@@ -33,7 +34,7 @@ const ResumeAnalyzer = () => {
 
     const formData = new FormData();
     formData.append("resume", file);
-    formData.append("role",role);
+    formData.append("role", role);
 
     setLoading(true);
     try {
@@ -110,14 +111,27 @@ const ResumeAnalyzer = () => {
 
             </div>
             <div>
-              <select name="role" className='text-red-400' onChange={selectHandler}>
-                <option value="frontend">Frontend developer</option>
-                <option value="backend">Backend developer</option>
-                <option value="fullstack">Full stack developer</option>
-                <option value="ds">Data Science</option>
-                <option value="ml">Machine learning</option>
-              </select>
-
+              <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                Target Role
+              </label>
+              <div className="relative">
+                <select
+                  name="role"
+                  onChange={selectHandler}
+                  className="w-full appearance-none bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-200 cursor-pointer outline-none transition-colors focus:border-lime-400 focus:ring-2 focus:ring-lime-400/15 hover:border-zinc-500"
+                >
+                  <option value="frontend">Frontend Developer</option>
+                  <option value="backend">Backend Developer</option>
+                  <option value="fullstack">Full Stack Developer</option>
+                  <option value="ds">Data Science</option>
+                  <option value="ml">Machine Learning</option>
+                </select>
+                <div className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M3 5l4 4 4-4" stroke="#a3e635" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
             </div>
 
             {/* Analyze Button */}
@@ -141,7 +155,10 @@ const ResumeAnalyzer = () => {
         )}
         {/* Results */}
         {data && (
-          < div className='space-y-5'>
+          <div className='space-y-5'>
+            <div>
+              <Scorecard data={data} />
+            </div>
             {/* Top Roles */}
             <div className='bg-zinc-900 border border-zinc-800 rounded-xl p-5'>
               <p className='text-xs text-zinc-500 uppercase tracking-widest mb-4'>Best-fit Roles</p>
