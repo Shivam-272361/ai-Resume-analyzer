@@ -7,9 +7,7 @@ require("dotenv").config();
 const PORT = process.env.PORT || 4000;
 
 app.use(cors({
-    origin: "http://localhost:5173", // Only allow your React app
-    methods: ["GET", "POST"],
-    credentials: true
+   origin: "*",
 }));
 
 app.use(express.json());
