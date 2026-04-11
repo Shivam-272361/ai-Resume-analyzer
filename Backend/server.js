@@ -12,24 +12,10 @@ const allowedOrigins = (process.env.FRONTEND_URLS || "")
     .filter(Boolean);
 
 app.use(cors({
-    origin: (origin, callback) => {
-        // Allow non-browser tools and same-origin requests with no Origin header.
-        if (!origin) {
-            return callback(null, true);
-        }
-
-        if (
-            allowedOrigins.includes(origin) ||
-            origin.startsWith("http://localhost:") ||
-            origin.startsWith("http://127.0.0.1:")
-        ) {
-            return callback(null, true);
-        }
-
-        return callback(new Error(`CORS blocked for origin: ${origin}`));
-    },
+  origin: "https://ai-resume-analyzer-sigma-indol.vercel.app",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
 }));
-
 app.use(express.json());
 
 app.get("/", (req, res) => {
