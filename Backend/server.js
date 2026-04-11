@@ -6,8 +6,28 @@ require("./utility/cleanUp"); // adjust path
 require("dotenv").config();
 const PORT = process.env.PORT || 4000;
 
+const allowedOrigins = (process.env.FRONTEND_URLS || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
 app.use(cors({
-   origin: "https://your-frontend.vercel.app",
+    origin: (origin, callback) => {
+        // Allow non-browser tools and same-origin requests with no Origin header.
+        if (!origin) {
+            return callback(null, true);
+        }
+
+        if (
+            allowedOrigins.includes(origin) ||
+            origin.startsWith("http://localhost:") ||
+            origin.startsWith("http://127.0.0.1:")
+        ) {
+            return callback(null, true);
+        }
+
+        return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
 }));
 
 app.use(express.json());
