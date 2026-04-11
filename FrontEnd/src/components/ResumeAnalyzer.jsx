@@ -5,14 +5,15 @@ import Scorecard from './Scorecard';
 const ResumeAnalyzer = () => {
   const [file, setFile] = useState(null);
   const [dragging, setDragging] = useState(false);
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState("frontend");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
   const inputRef = useRef();
 
-  const API_URL = import.meta.env.VITE_API_URL;  // VITE_API_URL=http://localhost:5000/api/v1/upload  not the real
-  const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+  const API_URL =
+    import.meta.env.VITE_API_URL ||
+    "https://ai-resume-analyzer-nm26.onrender.com/api/v1/upload";
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -38,11 +39,26 @@ const ResumeAnalyzer = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post(API_URL, formData);
+      const response = await axios.post(API_URL, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        timeout: 120000,
+      });
       setData(response.data);
     } catch (error) {
       console.log(error);
-      setError(error.response?.data?.message || error.message || "Something went wrong.");
+      setError(
+        error.response?.data?.message ||
+        (error.code === "ECONNABORTED"
+          ? "The server took too long to respond. Please try again in a few seconds."
+          : "") ||
+        (error.message === "Network Error"
+          ? "Cannot reach the backend server. Check that the Render backend is live and reachable."
+          : "") ||
+        error.message ||
+        "Something went wrong."
+      );
     } finally {
       setLoading(false);
     }
