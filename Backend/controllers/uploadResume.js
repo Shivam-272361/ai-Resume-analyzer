@@ -130,7 +130,7 @@ exports.uploadResume = async (req, res) => {
                 briefAdvice: "Improve role-specific skills, resume structure, and measurable impact to increase your ATS score."
             };
         }
-
+        console.log(aiResult);
         const atsScore =
             0.5 * skillAnalysis.score +
             0.25 * contentScore +
@@ -187,7 +187,7 @@ exports.uploadResume = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Something went wrong during resume processing",
-            error: error
+            error: error.message
         });
     }
 };
