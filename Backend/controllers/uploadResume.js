@@ -1,7 +1,6 @@
 const Resume = require("../models/resume");
 const { extractText } = require("../utility/extractText");
-const { extractSkills } = require("../utility/skillExtractor");
-const { analyzeResume } = require("../services/geminiAI");
+const { analyzeResume,extractSkillsAI } = require("../services/openRouter");
 const fs = require("fs/promises");
 
 
@@ -94,7 +93,7 @@ exports.uploadResume = async (req, res) => {
         const text = await extractText(file.path, file.mimetype);
 
         // 🔹 Extract skills using AI
-        const extractedSkills = extractSkills(text);
+        const extractedSkills = extractSkillsAI(text);
 
         const normalizedExtracted = extractedSkills.map(normalizeSkill);
 
