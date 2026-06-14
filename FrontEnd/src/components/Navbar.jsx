@@ -16,7 +16,7 @@ const Navbar = () => {
         <div className="flex items-center gap-4">
           <span className="hidden sm:inline text-xs text-zinc-500 font-medium tracking-wide">AI-Powered Analysis</span>
           <a
-            href="https://github.com"
+            href="https://github.com/Shivam-272361/ai-Resume-analyzer"
             target="_blank"
             rel="noopener noreferrer"
             className="text-zinc-500 hover:text-white transition-colors duration-200"
