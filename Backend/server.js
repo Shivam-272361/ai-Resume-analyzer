@@ -11,11 +11,13 @@ const allowedOrigins = (process.env.FRONTEND_URLS || "")
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-app.use(cors({
-  origin: "https://ai-resume-analyzer-sigma-indol.vercel.app",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
+//     {
+//   origin: "https://ai-resume-analyzer-sigma-indol.vercel.app",
+//   methods: ["GET", "POST", "PUT", "DELETE"],
+//   credentials: true
+// }
+
+app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {

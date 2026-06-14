@@ -20,6 +20,7 @@ build/
 # Env files (VERY IMPORTANT)
 .env
 FrontEnd/.env
+FrontEnd/.env.development
 Backend/.env
 
 # Local config

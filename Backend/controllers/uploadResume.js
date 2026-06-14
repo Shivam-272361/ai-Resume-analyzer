@@ -1,83 +1,31 @@
 const Resume = require("../models/resume");
 const { extractText } = require("../utility/extractText");
-const { analyzeResume,extractSkillsAI } = require("../services/openRouter");
+const { analyzeResume, extractSkillsAI } = require("../services/geminiAI");
+const {
+    calculateSkillScore,
+    calculateStructureScore,
+    calculateContentScore,
+    calculateATSScore,
+    resolveRole,
+    isValidRole,
+    getSupportedRoles
+} = require("../utility/atsScoring");
 const fs = require("fs/promises");
 
-
-const normalizeSkill = (skill) => {
-    return skill.toLowerCase()
-        .replace(".js", "")
-        .replace("apis", "api")
-        .replace("api", "api")
-        .trim();
-};
-
-// 🔹 Skill Score Function
-const checkSkillScore = (requiredSkills, extractedSkills) => {
-    const normalizedExtracted = extractedSkills.map(s => s.toLowerCase());
-
-    const matched = requiredSkills.filter(skill =>
-        normalizedExtracted.includes(skill.toLowerCase())
-    );
-
-    return {
-        score: (matched.length / requiredSkills.length) * 100,
-        matchedSkills: matched,
-        missingSkills: requiredSkills.filter(skill =>
-            !normalizedExtracted.includes(skill.toLowerCase())
-        )
-    };
-};
-
-const calculateContentScore = (text) => {
-
-    const numberMatches = text.match(/\d+%|\d+/g) || [];
-    const numberScore = Math.min(numberMatches.length * 5, 20);
-
-    const actionMatches = text.match(/(developed|built|created|implemented|designed|optimized|led)/gi) || [];
-    const actionScore = Math.min(actionMatches.length * 5, 20);
-
-    let lengthScore = 0;
-    if (text.length > 500) lengthScore = 5;
-    if (text.length > 1000) lengthScore = 10;
-    if (text.length > 1500) lengthScore = 15;
-
-
-    const contentScore = actionScore + numberScore + lengthScore;
-
-    return contentScore;
-};
-
 exports.uploadResume = async (req, res) => {
-    const roleSkills = {
-        frontend: ["html", "css", "javascript", "react", "redux"],
-        backend: ["nodejs", "express", "mongodb", "apis", "sql"],
-        fullstack: ["html", "css", "javascript", "react", "nodejs", "mongodb"],
-        data: ["python", "sql", "excel", "pandas", "tableau"],
-        ml: ["python", "machine learning", "tensorflow", "pytorch", "numpy"]
-    };
-
     const file = req.file;
-    const roleAliases = {
-        ds: "data",
-        datascience: "data",
-        "data science": "data",
-        machinelearning: "ml",
-        "machine learning": "ml",
-    };
-    const requestedRole = String(req.body.role || "").trim().toLowerCase();
-    const role = roleAliases[requestedRole] || requestedRole;
+    const role = resolveRole(req.body.role);
 
     try {
-        // 🔴 Validate role
-        if (!role || !roleSkills[role]) {
+        // 1. Validate role
+        if (!role || !isValidRole(role)) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid or missing role"
+                message: `Invalid or missing role. Supported roles: ${getSupportedRoles().join(", ")}`
             });
         }
 
-        // 🔴 Validate file
+        // 2. Validate file
         if (!file) {
             return res.status(400).json({
                 success: false,
@@ -85,58 +33,42 @@ exports.uploadResume = async (req, res) => {
             });
         }
 
-        console.log("Uploading:", file.originalname);
+        console.log("Processing resume for role:", role);
 
         const fileUrl = `/uploads/${file.filename}`;
 
-        // 🔹 Extract text
+        // 3. Extract text from file
         const text = await extractText(file.path, file.mimetype);
 
-        // 🔹 Extract skills using AI
-        const extractedSkills = extractSkillsAI(text);
+        // 4. Extract skills using AI
+        let extractedSkills = [];
+        try {
+            extractedSkills = await extractSkillsAI(text);
+        } catch (err) {
+            console.error("AI Skill Extraction failed:", err.message);
+            extractedSkills = [];
+        }
 
-        const normalizedExtracted = extractedSkills.map(normalizeSkill);
-
-        // 🔹 Calculate skill score
-        const requiredSkills = roleSkills[role];
-        const skillAnalysis = checkSkillScore(requiredSkills, normalizedExtracted);
-
-        let structureScore = 0;
-
-        const lowerText = text.toLowerCase();
-
-        const sections = ["education", "experience", "skills", "projects"];
-
-        sections.forEach(section => {
-            if (lowerText.includes(section)) {
-                structureScore += 20;
-            }
-        });
-
-        if (/•|-|\*/.test(text)) structureScore += 20;
+        // 5. Calculate scores using the scoring engine
+        const skillAnalysis = calculateSkillScore(role, extractedSkills);
+        const structureScore = calculateStructureScore(text);
         const contentScore = calculateContentScore(text);
+        const atsScore = calculateATSScore(skillAnalysis.score, structureScore, contentScore);
 
-
-
-        // 🔹 Optional: your existing AI analysis
+        // 6. Detailed AI Analysis (Feedback)
         let aiResult;
         try {
             aiResult = await analyzeResume(text);
         } catch (aiError) {
-            console.error("AI analysis failed, falling back to default response:", aiError.message);
+            console.error("AI feedback analysis failed:", aiError.message);
             aiResult = {
                 topRoles: [role],
                 missingSkills: skillAnalysis.missingSkills.slice(0, 5),
                 briefAdvice: "Improve role-specific skills, resume structure, and measurable impact to increase your ATS score."
             };
         }
-        console.log(aiResult);
-        const atsScore =
-            0.5 * skillAnalysis.score +
-            0.25 * contentScore +
-            0.25 * structureScore
 
-        // 🔹 Save to DB
+        // 7. Save to Database
         const savedResume = await Resume.create({
             fileName: file.originalname,
             fileURL: fileUrl,
@@ -154,6 +86,7 @@ exports.uploadResume = async (req, res) => {
             }
         });
 
+        // 8. Respond to client
         return res.status(200).json({
             success: true,
             message: "Resume analyzed successfully",
@@ -161,22 +94,21 @@ exports.uploadResume = async (req, res) => {
             fileURL: fileUrl,
             ATSscore: atsScore,
             ATSbreakDown: {
-                skillScore: skillAnalysis.score,
+                skillScore: Math.round(skillAnalysis.score),
                 structureScore: structureScore,
                 contentScore: contentScore,
             },
             matchedSkills: skillAnalysis.matchedSkills,
             missingSkills: skillAnalysis.missingSkills,
             extractedSkills: extractedSkills,
-            aiResult: aiResult,
-            expiresAt: savedResume.expiresAt
+            aiResult: aiResult
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Controller Error:", error);
 
-        // 🔹 Cleanup uploaded file
-        if (file?.path) {
+        // Cleanup uploaded file if an error occurs
+        if (file && file.path) {
             try {
                 await fs.unlink(file.path);
             } catch (err) {
