@@ -12,7 +12,7 @@ An AI-powered web app that analyzes resumes and provides feedback, role matching
 Frontend: React (Vite)  
 Backend: Node.js, Express  
 AI: OpenAI / LLM API  
-Database: MongoDB (if used)
+Database: MongoDB
 
 ## 📦 Project Structure
 frontend/
